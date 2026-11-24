@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>জাহিনের জন্য একটি জরুরি চিঠি 💌</title>
+
+    <!-- Google Fonts: Noto Serif Bengali (চিঠির লেখার জন্য) এবং Hind Siliguri (বাটন ও UI-এর জন্য) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Noto+Serif+Bengali:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Custom Tailwind Configuration -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        serifBn: ['"Noto Serif Bengali"', 'serif'],
+                        sansBn: ['"Hind Siliguri"', 'sans-serif'],
+                    },
+                    colors: {
+                        parchment: '#fcf8f0',
+                        ink: '#3b261d',
+                        inkSoft: '#634639',
+                        crimson: '#9e1b24',
+                        crimsonDark: '#6e0f17',
+                        goldAccent: '#c9a26d',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* মূল ব্যাকগ্রাউন্ড ও ফন্ট সেটআপ */
+        body {
+            background: linear-gradient(135deg, #fdf5ef 0%, #f9e4dc 50%, #f3d6cc 100%);
+            min-height: 100vh;
+            color: #3b261d;
+            overflow-x: hidden;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* ব্যাকগ্রাউন্ডে ভাসমান হার্ট পার্টিকেল */
+        .ambient-heart {
+            position: fixed;
+            bottom: -40px;
+            pointer-events: none;
+            z-index: 0;
+            opacity: 0;
+            animation: floatUp linear infinite;
+            user-select: none;
+        }
+
+        @keyframes floatUp {
+            0% {
+                transform: translateY(0) translateX(0) rotate(0deg) scale(0.8);
+                opacity: 0;
+            }
+            15% {
+                opacity: 0.35;
+            }
+            85% {
+                opacity: 0.25;
+            }
+            100% {
+                transform: translateY(-110vh) translateX(25px) rotate(25deg) scale(1.1);
+                opacity: 0;
+            }
+        }
+
+        /* 3D খামের কন্টেইনার ও পার্সপেক্টিভ */
+        .envelope-scene {
+            perspective: 1200px;
+        }
+
+        .envelope-wrapper {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 1.48 / 1;
+            cursor: pointer;
+            transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+            transform-style: preserve-3d;
+        }
+
+        .envelope-wrapper:hover:not(.is-opening) {
+            transform: translateY(-6px);
+        }
+
+        /* খামের পেছনের অংশ */
+        .envelope-back {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(160deg, #ecd9c4 0%, #e1c7ab 100%);
+            border-radius: 12px;
+            box-shadow: 0 22px 45px -12px rgba(78, 42, 30, 0.28), 0 8px 18px -6px rgba(78, 42, 30, 0.16);
+            border: 1px solid rgba(139, 98, 70, 0.22);
+            overflow: hidden;
+        }
+
+        /* খামের ভেতরে থাকা ভাঁজ করা চিঠির প্রিভিউ */
+        .envelope-letter-peek {
+            position: absolute;
+            left: 6%;
+            right: 6%;
+            bottom: 8%;
+            height: 82%;
+            background: #fcf8f0;
+            border-radius: 8px;
+            border: 1px solid rgba(180, 145, 105, 0.35);
+            box-shadow: 0 4px 12px rgba(59, 38, 29, 0.12);
+            z-index: 2;
+            transition: transform 0.85s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.5s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            padding: 18px 20px;
+        }
+
+        .envelope-wrapper.is-opening .envelope-letter-peek {
+            transform: translateY(-68%);
+        }
+
+        /* খামের সামনের পকেট (বাম, ডান ও নিচের ভাঁজ) */
+        .envelope-pocket {
+            position: absolute;
+            inset: 0;
+            z-index: 3;
+            border-radius: 12px;
+            overflow: hidden;
+            pointer-events: none;
+        }
+
+        .flap-left {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(90deg, #f3e4d3 0%, #ead5be 100%);
+            clip-path: polygon(0 0, 52% 52%, 0 100%);
+        }
+
+        .flap-right {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(270deg, #f3e4d3 0%, #e8d2b9 100%);
+            clip-path: polygon(100% 0, 48% 52%, 100% 100%);
+        }
+
+        .flap-bottom {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(180deg, #f7ece0 0%, #eedcc8 100%);
+            clip-path: polygon(0 100%, 50% 44%, 100% 100%);
+            filter: drop-shadow(0 -3px 6px rgba(78, 42, 30, 0.08));
+        }
+
+        /* খামের উপরের ঢাকনা (3D RotateX অ্যানিমেশন) */
+        .flap-top {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 58%;
+            z-index: 4;
+            transform-origin: top center;
+            transition: transform 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+            transform-style: preserve-3d;
+        }
+
+        .flap-top-shape {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(180deg, #f9f0e5 0%, #ecdbc6 100%);
+            clip-path: polygon(0 0, 100% 0, 50% 100%);
+            border-top-left-radius: 12px;
+            border-top-right-radius: 12px;
+            filter: drop-shadow(0 5px 8px rgba(78, 42, 30, 0.14));
+        }
+
+        .envelope-wrapper.is-opening .flap-top {
+            transform: rotateX(180deg);
+            z-index: 1;
+        }
+
+        /* লাল মোমের সিল (Wax Seal) */
+        .wax-seal {
+            position: absolute;
+            top: 52%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 5;
+            width: 68px;
+            height: 68px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 32% 28%, #d6333f 0%, #9e1b24 55%, #630c13 100%);
+            box-shadow:
+                0 8px 18px rgba(99, 12, 19, 0.42),
+                inset 0 2px 5px rgba(255, 210, 210, 0.45),
+                inset 0 -4px 8px rgba(50, 4, 8, 0.6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.4s ease, opacity 0.35s ease;
+            animation: sealPulse 2.4s ease-in-out infinite;
+        }
+
+        .wax-seal::before {
+            content: '';
+            position: absolute;
+            inset: 6px;
+            border-radius: 50%;
+            border: 1.5px solid rgba(255, 225, 225, 0.32);
+        }
+
+        .envelope-wrapper.is-opening .wax-seal {
+            opacity: 0;
+            transform: translate(-50%, -50%) scale(1.25);
+            animation: none;
+            pointer-events: none;
+        }
+
+        @keyframes sealPulse {
+            0%, 100% {
+                transform: translate(-50%, -50%) scale(1);
+                box-shadow: 0 8px 18px rgba(99, 12, 19, 0.42), 0 0 0 0 rgba(158, 27, 36, 0.38);
+            }
+            50% {
+                transform: translate(-50%, -50%) scale(1.06);
+                box-shadow: 0 10px 24px rgba(99, 12, 19, 0.48), 0 0 0 12px rgba(158, 27, 36, 0);
+            }
+        }
+
+        /* ভিন্টেজ চিঠির কাগজের টেক্সচার */
+        .vintage-paper {
+            background-color: #fcf8f0;
+            background-image:
+                radial-gradient(rgba(166, 124, 82, 0.06) 1px, transparent 0),
+                linear-gradient(180deg, rgba(255, 252, 245, 0.9) 0%, rgba(249, 241, 228, 0.95) 100%);
+            background-size: 20px 20px, 100% 100%;
+            box-shadow:
+                0 24px 60px -15px rgba(62, 39, 35, 0.22),
+                0 0 0 1px rgba(180, 145, 105, 0.28);
+        }
+
+        /* পোস্টাল স্ট্যাম্প ডিজাইন */
+        .postal-stamp {
+            background: #fdf6ec;
+            border: 2px dashed rgba(158, 27, 36, 0.45);
+            box-shadow: 0 2px 6px rgba(59, 38, 29, 0.08);
+        }
+
+        /* চিঠি খোলার পর এন্ট্রান্স অ্যানিমেশন */
+        .letter-reveal {
+            animation: letterFadeSlide 0.75s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+        }
+
+        @keyframes letterFadeSlide {
+            0% {
+                opacity: 0;
+                transform: translateY(36px) scale(0.96);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        /* দুষ্টুমি বাটনের উইগল অ্যানিমেশন */
+        @keyframes wiggle {
+            0%, 100% { transform: rotate(0deg); }
+            25% { transform: rotate(-4deg); }
+            75% { transform: rotate(4deg); }
+        }
+
+        .animate-wiggle {
+            animation: wiggle 0.32s ease-in-out;
+        }
+
+        /* সেলিব্রেশন হার্ট/কনফেটি পার্টিকেল */
+        .burst-particle {
+            position: fixed;
+            pointer-events: none;
+            z-index: 50;
+            font-size: 20px;
+            user-select: none;
+            animation: burstFly 1.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        @keyframes burstFly {
+            0% {
+                opacity: 1;
+                transform: translate(0, 0) scale(0.5) rotate(0deg);
+            }
+            70% {
+                opacity: 1;
+            }
+            100% {
+                opacity: 0;
+                transform: translate(var(--tx), var(--ty)) scale(1.25) rotate(var(--rot));
+            }
+        }
+    </style>
+</head>
+<body class="font-sansBn antialiased selection:bg-rose-200 selection:text-ink">
+
+    <!-- ব্যাকগ্রাউন্ডের ভাসমান হালকা হার্ট কন্টেইনার -->
+    <div id="ambientHeartsContainer" aria-hidden="true"></div>
+
+    <!-- মূল র‍্যাপার -->
+    <main class="relative z-10 min-h-screen w-full flex flex-col items-center justify-center px-4 py-8 sm:py-12">
+
+        <!-- ========================================================= -->
+        <!-- স্টেজ ১: বন্ধ খাম (Closed Envelope Screen) -->
+        <!-- ========================================================= -->
+        <section id="envelopeStage" class="w-full max-w-md flex flex-col items-center text-center transition-all duration-500">
+
+            <!-- উপরের লেবেল -->
+            <div class="mb-7 sm:mb-9">
+                <span class="inline-block px-4 py-1.5 rounded-full bg-white/75 backdrop-blur-sm border border-rose-200/80 text-rose-900 font-medium text-sm sm:text-base shadow-sm">
+                    তোমার জন্য একটা জরুরি চিঠি এসেছে 💌
+                </span>
+            </div>
+
+            <!-- 3D ডিজিটাল খাম -->
+            <div class="envelope-scene w-[92vw] max-w-[400px]">
+                <div id="envelopeBox" class="envelope-wrapper" role="button" tabindex="0" aria-label="চিঠির খাম খুলতে ট্যাপ করো">
+
+                    <!-- খামের পেছনের অংশ -->
+                    <div class="envelope-back"></div>
+
+                    <!-- খামের ভেতর থেকে উঁকি দেওয়া চিঠি -->
+                    <div class="envelope-letter-peek">
+                        <div class="w-12 h-1 bg-amber-900/15 rounded-full mb-3"></div>
+                        <p class="font-serifBn text-ink font-semibold text-sm sm:text-base">প্রিয় জাহিন,</p>
+                        <div class="w-3/4 h-1.5 bg-amber-900/10 rounded-full mt-2.5"></div>
+                        <div class="w-2/3 h-1.5 bg-amber-900/10 rounded-full mt-2"></div>
+                        <div class="w-1/2 h-1.5 bg-amber-900/10 rounded-full mt-2"></div>
+                    </div>
+
+                    <!-- খামের সামনের পকেট -->
+                    <div class="envelope-pocket">
+                        <div class="flap-left"></div>
+                        <div class="flap-right"></div>
+                        <div class="flap-bottom"></div>
+
+                        <!-- খামের সামনের ঠিকানা -->
+                        <div class="absolute bottom-3.5 sm:bottom-4 inset-x-4 text-center z-10">
+                            <p class="font-serifBn text-[11px] sm:text-xs text-inkSoft/90 leading-relaxed tracking-wide">
+                                <span class="font-semibold text-ink">প্রাপক: জাহিন</span><br>
+                                গোলাপগঞ্জ, বীরগঞ্জ, দিনাজপুর
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- খামের উপরের ঢাকনা -->
+                    <div class="flap-top">
+                        <div class="flap-top-shape"></div>
+                    </div>
+
+                    <!-- লাল মোমের সিল -->
+                    <div id="waxSeal" class="wax-seal" title="খুলতে ট্যাপ করো">
+                        <svg class="w-7 h-7 text-rose-100 drop-shadow-sm" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                            <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+
+            <!-- নিচের নির্দেশনা -->
+            <p class="mt-7 sm:mt-8 text-sm sm:text-base text-inkSoft/90 font-medium flex items-center gap-2 animate-pulse">
+                <span>✨</span>
+                <span>সিলের ওপর ট্যাপ করে চিঠিটা খোলো</span>
+                <span>✨</span>
+            </p>
+        </section>
+
+        <!-- ========================================================= -->
+        <!-- স্টেজ ২ ও ৩: খোলা ভিন্টেজ চিঠি ও ইন্টারেক্টিভ অংশ -->
+        <!-- ========================================================= -->
+        <section id="letterStage" class="hidden w-full max-w-2xl mx-auto">
+
+            <!-- ভিন্টেজ চিঠির কার্ড -->
+            <article class="vintage-paper rounded-2xl p-3 sm:p-5">
+                <!-- ভেতরের ডেলিকেট বর্ডার -->
+                <div class="border border-amber-900/20 rounded-xl p-5 sm:p-9 relative overflow-hidden">
+
+                    <!-- ডানদিকের উপরের পোস্টাল স্ট্যাম্প -->
+                    <div class="flex flex-col-reverse sm:flex-row sm:items-start sm:justify-between gap-4 mb-6 pb-5 border-b border-amber-900/15">
+                        <!-- তারিখ ও প্রাপকের তথ্য -->
+                        <div class="font-serifBn text-sm sm:text-base text-inkSoft leading-relaxed">
+                            <p><span class="font-semibold text-ink">তারিখ:</span> ২৪ নভেম্বর, ২০২৬</p>
+                            <p class="mt-1"><span class="font-semibold text-ink">প্রাপক:</span> জাহিন</p>
+                            <p>গোলাপগঞ্জ, বীরগঞ্জ, দিনাজপুর।</p>
+                        </div>
+
+                        <!-- ছোট্ট ভিন্টেজ স্ট্যাম্প -->
+                        <div class="self-end sm:self-start postal-stamp rounded-lg px-3 py-2 text-center select-none transform rotate-2 shrink-0">
+                            <div class="text-crimson text-lg leading-none mb-1">💌</div>
+                            <div class="font-serifBn text-[10px] font-semibold tracking-wider text-crimsonDark uppercase">দিনাজপুর</div>
+                            <div class="text-[9px] text-inkSoft/80 font-sansBn">২৪.১১.২৬</div>
+                        </div>
+                    </div>
+
+                    <!-- চিঠির মূল লেখা -->
+                    <div class="font-serifBn text-ink text-[15.5px] sm:text-[17px] leading-[1.9] space-y-5">
+
+                        <!-- সম্ভাষণ -->
+                        <h1 class="text-xl sm:text-2xl font-bold text-crimsonDark">
+                            প্রিয় জাহিন,
+                        </h1>
+
+                        <!-- শুরুর অনুচ্ছেদ -->
+                        <p class="text-justify sm:text-left">
+                            একটু আগেই ফোন দিয়ে যেভাবে হুমকি দিয়ে গেলে যে আজকে রাতে না খেলে আমার খবর আছে, তাতে আমার অবস্থা তো একদম কাহিল! কিন্তু কী করব বলো, অনেক চেষ্টা করেও আজকে রাতে আমার পক্ষে আর খাওয়া সম্ভব হচ্ছে না। তুমি রাগ করার আগে প্লিজ একটু ঠান্ডা মাথায় আমার কারণগুলো পয়েন্ট বাই পয়েন্ট পড়ে দেখো—
+                        </p>
+
+                        <!-- পয়েন্ট বাই পয়েন্ট কারণসমূহ -->
+                        <ul class="space-y-3.5 my-6">
+                            <li class="flex items-start gap-3 bg-amber-50/70 border border-amber-900/10 rounded-xl p-3.5 sm:p-4 shadow-sm">
+                                <span class="text-xl sm:text-2xl leading-none mt-0.5 shrink-0" aria-hidden="true">🍛</span>
+                                <div>
+                                    <strong class="text-crimsonDark font-bold">বিকেলের দেরি করে খাওয়া:</strong>
+                                    আজকে বিকেল সাড়ে ৪টার দিকে আমি বেশ পেট ভরে ঝাল ফ্রাই দিয়ে ভাত খেয়েছি। বিকেল বেলা এত দেরি করে ভারী খাবার খেলে এমনিতেই রাতে আর খিদে থাকে না।
+                                </div>
+                            </li>
+
+                            <li class="flex items-start gap-3 bg-amber-50/70 border border-amber-900/10 rounded-xl p-3.5 sm:p-4 shadow-sm">
+                                <span class="text-xl sm:text-2xl leading-none mt-0.5 shrink-0" aria-hidden="true">☕</span>
+                                <div>
+                                    <strong class="text-crimsonDark font-bold">ভাতের পর চা:</strong>
+                                    ভাত খাওয়ার পরপরই আবার চা খেয়েছি, যেটা পেটটাকে আরও ভরাট করে দিয়েছে।
+                                </div>
+                            </li>
+
+                            <li class="flex items-start gap-3 bg-amber-50/70 border border-amber-900/10 rounded-xl p-3.5 sm:p-4 shadow-sm">
+                                <span class="text-xl sm:text-2xl leading-none mt-0.5 shrink-0" aria-hidden="true">🥜</span>
+                                <div>
+                                    <strong class="text-crimsonDark font-bold">সন্ধ্যার বাদাম পর্ব:</strong>
+                                    এরপর সন্ধ্যা ৬টা ১৫-এর দিকে ৩০ টাকা দিয়ে ১০০ গ্রাম বাদাম কিনে এনেছিলাম। তারপর বসে বসে <span class="italic font-semibold">Arcane</span> সিরিজ দেখতে দেখতে পুরো ১০০ গ্রাম বাদাম একাই শেষ করে ফেলেছি। তুমি তো জানোই, এতগুলো বাদাম খেলে পেট একদম ভারী হয়ে যায়।
+                                </div>
+                            </li>
+
+                            <li class="flex items-start gap-3 bg-amber-50/70 border border-amber-900/10 rounded-xl p-3.5 sm:p-4 shadow-sm">
+                                <span class="text-xl sm:text-2xl leading-none mt-0.5 shrink-0" aria-hidden="true">🫄</span>
+                                <div>
+                                    <strong class="text-crimsonDark font-bold">বর্তমান অবস্থা:</strong>
+                                    এই মুহূর্তে আমার পেট একদম কানায় কানায় ভরা। সত্যি বলতে, এখন জোর করে খেতে গেলে শরীর খারাপ লাগবে।
+                                </div>
+                            </li>
+                        </ul>
+
+                        <!-- শেষ অনুচ্ছেদ -->
+                        <p class="text-justify sm:text-left">
+                            আমি একদমই না খেয়ে থাকছি না, বরং বিকেল থেকে সন্ধ্যা পর্যন্ত একটু বেশিই খেয়ে ফেলেছি। তাই আজকের রাতের মতো আমাকে একটু ছাড় দাও, প্লিজ! কথা দিচ্ছি, কালকে একদম সময়মতো ঠিকঠাক খাব। এখন আর রাগ করে থেকো না, একটা মিষ্টি হাসি দাও তো!
+                        </p>
+
+                        <!-- ইতি ও স্বাক্ষর (ডানপাশে) -->
+                        <div class="pt-4 text-right">
+                            <p class="text-inkSoft">ইতি,</p>
+                            <p class="text-lg sm:text-xl font-bold text-crimsonDark mt-0.5">তোমার গালিব</p>
+                        </div>
+                    </div>
+
+                    <!-- ========================================================= -->
+                    <!-- স্টেজ ৩: চিঠির নিচের কিউট ইন্টারেক্টিভ অংশ -->
+                    <!-- ========================================================= -->
+                    <div class="mt-8 pt-6 border-t border-dashed border-amber-900/20 text-center">
+                        <p class="font-serifBn text-lg sm:text-xl font-bold text-ink mb-5">
+                            রাগ কি একটু কমেছে?
+                        </p>
+
+                        <!-- বাটন গ্রুপ -->
+                        <div id="interactiveButtons" class="flex flex-col sm:flex-row items-center justify-center gap-3.5 relative min-h-[110px] sm:min-h-[64px]">
+                            <!-- মাফ করার বাটন -->
+                            <button
+                                id="forgiveBtn"
+                                type="button"
+                                class="w-full sm:w-auto px-6 py-3.5 rounded-xl bg-gradient-to-r from-crimson to-rose-700 hover:from-crimsonDark hover:to-crimson text-white font-semibold text-base shadow-md hover:shadow-lg transition-all duration-300 active:scale-95 cursor-pointer"
+                            >
+                                হ্যাঁ, আজকের মতো মাফ করলাম ❤️
+                            </button>
+
+                            <!-- দুষ্টুমি রাগ বাটন -->
+                            <button
+                                id="angryBtn"
+                                type="button"
+                                class="w-full sm:w-auto px-6 py-3.5 rounded-xl bg-amber-100/90 hover:bg-amber-200/80 text-ink border border-amber-900/20 font-medium text-base shadow-sm transition-all duration-300 cursor-pointer"
+                            >
+                                না, এখনো রাগ আছি 😤
+                            </button>
+                        </div>
+
+                        <!-- মাফ করার পর কনফার্মেশন বক্স -->
+                        <div id="forgiveMessage" class="hidden mt-2 bg-rose-50/90 border border-rose-200 rounded-2xl p-5 shadow-sm letter-reveal">
+                            <p class="font-serifBn text-lg sm:text-xl font-bold text-crimsonDark leading-relaxed">
+                                থ্যাংক ইউ সো মাচ! কালকে একদম সময়মতো খাব, প্রমিস! 🥰
+                            </p>
+                        </div>
+                    </div>
+
+                </div>
+            </article>
+
+            <!-- একদম নিচে খাম আবার বন্ধ করার বাটন -->
+            <div class="mt-6 text-center">
+                <button
+                    id="closeEnvelopeBtn"
+                    type="button"
+                    class="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-white/70 hover:bg-white text-inkSoft hover:text-ink border border-amber-900/15 text-sm font-medium shadow-sm transition-all duration-200 active:scale-95 cursor-pointer"
+                >
+                    <span>✉️</span>
+                    <span>খামটা আবার বন্ধ করো</span>
+                </button>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- ========================================================= -->
+    <!-- JavaScript: অ্যানিমেশন ও ইন্টারেক্টিভিটি লজিক -->
+    <!-- ========================================================= -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // এলিমেন্ট সিলেক্ট করা
+            const ambientContainer = document.getElementById('ambientHeartsContainer');
+            const envelopeStage = document.getElementById('envelopeStage');
+            const envelopeBox = document.getElementById('envelopeBox');
+            const letterStage = document.getElementById('letterStage');
+            const forgiveBtn = document.getElementById('forgiveBtn');
+            const angryBtn = document.getElementById('angryBtn');
+            const interactiveButtons = document.getElementById('interactiveButtons');
+            const forgiveMessage = document.getElementById('forgiveMessage');
+            const closeEnvelopeBtn = document.getElementById('closeEnvelopeBtn');
+
+            let isOpening = false;
+            let angryClickCount = 0;
+
+            // রাগ বাটনে ক্লিক করলে যে কিউট লেখাগুলো দেখাবে
+            const pleadingTexts = [
+                'প্লিজ রাগ করে থেকো না 🥺',
+                'আরেকবার ভাবো তো! 🥜',
+                'সত্যিই পেট ভরা 😭',
+                'একটা হাসি দাও না! 😊'
+            ];
+
+            /**
+             * ১. ব্যাকগ্রাউন্ডে হালকা ভাসমান হার্ট তৈরি করা
+             */
+            function createAmbientHearts() {
+                try {
+                    const heartIcons = ['❤️', '🩷', '🤍', '💌'];
+                    const totalHearts = 14;
+
+                    for (let i = 0; i < totalHearts; i++) {
+                        const heart = document.createElement('span');
+                        heart.className = 'ambient-heart';
+                        heart.textContent = heartIcons[i % heartIcons.length];
+
+                        const leftPos = Math.random() * 96;
+                        const size = 12 + Math.random() * 14;
+                        const duration = 10 + Math.random() * 12;
+                        const delay = Math.random() * 10;
+
+                        heart.style.left = `${leftPos}vw`;
+                        heart.style.fontSize = `${size}px`;
+                        heart.style.animationDuration = `${duration}s`;
+                        heart.style.animationDelay = `${delay}s`;
+
+                        ambientContainer.appendChild(heart);
+                    }
+                } catch (error) {
+                    console.error('Ambient hearts init error:', error);
+                }
+            }
+
+            /**
+             * ২. খাম খোলার অ্যানিমেশন ও চিঠি দেখানো
+             */
+            function openEnvelope() {
+                if (isOpening) return;
+                isOpening = true;
+
+                // খামের ঢাকনা খোলার ও চিঠি উপরে ওঠার ক্লাস যোগ করা
+                envelopeBox.classList.add('is-opening');
+
+                // অ্যানিমেশন শেষ হওয়ার পর চিঠি দেখানো
+                setTimeout(() => {
+                    envelopeStage.classList.add('opacity-0', 'scale-95');
+
+                    setTimeout(() => {
+                        envelopeStage.classList.add('hidden');
+                        letterStage.classList.remove('hidden');
+                        letterStage.classList.add('letter-reveal');
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }, 320);
+                }, 850);
+            }
+
+            /**
+             * ৩. খাম আবার বন্ধ করে প্রথম অবস্থায় ফিরে যাওয়া
+             */
+            function closeEnvelope() {
+                letterStage.classList.remove('letter-reveal');
+                letterStage.classList.add('hidden');
+
+                // ইন্টারেক্টিভ অংশ রিসেট করা
+                interactiveButtons.classList.remove('hidden');
+                forgiveMessage.classList.add('hidden');
+                angryClickCount = 0;
+                angryBtn.textContent = 'না, এখনো রাগ আছি 😤';
+                angryBtn.style.transform = 'translate(0px, 0px)';
+                forgiveBtn.style.transform = 'scale(1)';
+
+                // খাম রিসেট করে দেখানো
+                envelopeBox.classList.remove('is-opening');
+                envelopeStage.classList.remove('hidden');
+
+                // স্মুথ ফেড-ইন
+                requestAnimationFrame(() => {
+                    envelopeStage.classList.remove('opacity-0', 'scale-95');
+                });
+
+                isOpening = false;
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+
+            /**
+             * ৪. মাফ করার বাটনে ক্লিক করলে হার্ট ও কনফেটি সেলিব্রেশন
+             */
+            function triggerCelebration(originX, originY) {
+                const emojis = ['❤️', '🥰', '💖', '✨', '🌸', '💕', '🎉'];
+                const count = 36;
+
+                for (let i = 0; i < count; i++) {
+                    const particle = document.createElement('span');
+                    particle.className = 'burst-particle';
+                    particle.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+
+                    const angle = (Math.PI * 2 * i) / count + (Math.random() - 0.5) * 0.5;
+                    const distance = 90 + Math.random() * 190;
+                    const tx = Math.cos(angle) * distance;
+                    const ty = Math.sin(angle) * distance - 70;
+                    const rot = (Math.random() - 0.5) * 360;
+
+                    particle.style.left = `${originX}px`;
+                    particle.style.top = `${originY}px`;
+                    particle.style.setProperty('--tx', `${tx}px`);
+                    particle.style.setProperty('--ty', `${ty}px`);
+                    particle.style.setProperty('--rot', `${rot}deg`);
+                    particle.style.fontSize = `${16 + Math.random() * 14}px`;
+
+                    document.body.appendChild(particle);
+
+                    setTimeout(() => {
+                        particle.remove();
+                    }, 1650);
+                }
+            }
+
+            /**
+             * ৫. রাগ বাটনের মজার মুভমেন্ট ও লেখা পরিবর্তন (মোবাইল লেআউট না ভেঙে)
+             */
+            function handleAngryInteraction() {
+                // লেখা বদলানো
+                angryBtn.textContent = pleadingTexts[angryClickCount % pleadingTexts.length];
+                angryClickCount++;
+
+                // মোবাইলের স্ক্রিন অনুযায়ী নিরাপদ ছোট্ট শিফট
+                const isMobile = window.innerWidth < 640;
+                const maxShiftX = isMobile ? 18 : 34;
+                const maxShiftY = isMobile ? 8 : 14;
+
+                const shiftX = (Math.random() * 2 - 1) * maxShiftX;
+                const shiftY = (Math.random() * 2 - 1) * maxShiftY;
+
+                angryBtn.style.transform = `translate(${shiftX.toFixed(1)}px, ${shiftY.toFixed(1)}px)`;
+
+                // উইগল ইফেক্ট
+                angryBtn.classList.remove('animate-wiggle');
+                void angryBtn.offsetWidth;
+                angryBtn.classList.add('animate-wiggle');
+
+                // মাফ করার বাটনটাকে একটু একটু করে আরও আকর্ষণীয় করা
+                const forgiveScale = Math.min(1 + angryClickCount * 0.03, 1.12);
+                forgiveBtn.style.transform = `scale(${forgiveScale})`;
+            }
+
+            // ইভেন্ট লিসেনার যুক্ত করা
+            envelopeBox.addEventListener('click', openEnvelope);
+            envelopeBox.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    openEnvelope();
+                }
+            });
+
+            forgiveBtn.addEventListener('click', (e) => {
+                const rect = forgiveBtn.getBoundingClientRect();
+                const centerX = e.clientX || rect.left + rect.width / 2;
+                const centerY = e.clientY || rect.top + rect.height / 2;
+
+                triggerCelebration(centerX, centerY);
+
+                // বাটন লুকিয়ে কনফার্মেশন বক্স দেখানো
+                interactiveButtons.classList.add('hidden');
+                forgiveMessage.classList.remove('hidden');
+            });
+
+            angryBtn.addEventListener('click', handleAngryInteraction);
+
+            // ডেস্কটপে মাউস হোভার করলেও হালকা সরে যাওয়ার মজা (টাচ ডিভাইসে শুধু ক্লিকে কাজ করবে)
+            if (window.matchMedia('(hover: hover)').matches) {
+                angryBtn.addEventListener('mouseenter', () => {
+                    if (angryClickCount > 0) {
+                        handleAngryInteraction();
+                    }
+                });
+            }
+
+            closeEnvelopeBtn.addEventListener('click', closeEnvelope);
+
+            // ব্যাকগ্রাউন্ড হার্ট চালু করা
+            createAmbientHearts();
+        });
+    </script>
+</body>
+</html>
